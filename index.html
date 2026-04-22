@@ -202,6 +202,8 @@
   </div>
 </div>
 
+<!-- COURSES -->
+<!--
 <!-- SEARCH -->
 <div class="page" id="search">
   <div class="sec-label">Search by name</div>
@@ -253,6 +255,22 @@
     <span class="msg" id="addMsg"></span>
   </div>
 
+  <div class="sec-label">Add New Order</div>
+  <div class="tbl-wrap p-3 mb-4">
+    <div class="form-row">
+      <div class="field"><label>Order ID</label><input id="oId" type="number" style="width:80px" placeholder="7"/></div>
+      <div class="field"><label>Customer</label><input id="oCust" style="width:110px" placeholder="Alice"/></div>
+      <div class="field"><label>Product</label><input id="oProd" style="width:110px" placeholder="Monitor"/></div>
+      <div class="field"><label>Category</label>
+        <select id="oCat"><option>Accessories</option><option>Hardware</option></select>
+      </div>
+      <div class="field"><label>Price</label><input id="oPrice" type="number" style="width:90px" placeholder="999"/></div>
+      <div class="field"><label>Qty</label><input id="oQty" type="number" style="width:60px" placeholder="1"/></div>
+    </div>
+    <button class="btn-plain" id="addOrderBtn">Add Order</button>
+    <span class="msg" id="addOrderMsg"></span>
+  </div>
+
   <div class="sec-label">Export</div>
   <div class="tbl-wrap p-3">
     <p style="font-size:13px;color:#666;margin-bottom:12px;">Download the full structured JSON data file.</p>
@@ -260,12 +278,14 @@
   </div>
 </div>
 
-<!-- SCRIPT -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
 
-//DATA
+// ============================================================
+// our MAIN data — this is basically the "database" but in JS
+// since we can't fetch a real .json file without a server lol
+// ============================================================
 const data = {
   courses: [
     { code:"BSIT", name:"Bachelor of Science in IT" },
@@ -289,28 +309,49 @@ const data = {
   ]
 };
 
+// HELPER FUNCTIONS — reusable
+
+// for avg
 const avg = obj => +(Object.values(obj).reduce((a,b)=>a+b,0)/Object.values(obj).length).toFixed(2);
+
+// for ₱ sign
 const money = n => "₱"+Number(n).toLocaleString();
+
+// full course name using the course code (ex: BSIT = Bachelor of Science in IT) which shows up when they are top student
 const courseName = code => (data.courses.find(c=>c.code===code)||{name:code}).name;
+
+// decides the color of the grade badge: green if 90+, blue if 80+, red if below 80
 const grCls = g => g>=90?"gr-hi":g>=80?"gr-mid":"gr-lo";
+
+// wraps the grade in a colored HTML
 const gr = g => `<span class="gr ${grCls(g)}">${g}</span>`;
+
+// adds avg and courseName to each student object so we don't recompute it every time
 const enriched = () => data.students.map(s=>({...s, avg:avg(s.subjects), courseName:courseName(s.course)}));
 
-// Tab switching
+// TAB SWITCHING — clicking a tab shows the right page
+
 $("#tabNav a").on("click", function(e){
-  e.preventDefault();
+  e.preventDefault(); // stops the page from jumping to the top
   $("#tabNav a").removeClass("active");
   $(this).addClass("active");
   $(".page").removeClass("active");
-  $("#"+$(this).data("tab")).addClass("active");
+  $("#"+$(this).data("tab")).addClass("active"); // shows the page that matches the tab
 });
 
-//Student Render Function
+
+// PART: STUDENT PROCESSING
+// displays all students, computes average, finds top student
 function renderStudents() {
   const students = enriched();
+
+  // reduce goes through the array and keeps whoever has the higher avg
   const top = students.reduce((a,b)=>a.avg>b.avg?a:b);
+
+  // class average = sum of all averages / number of students
   const classAvg = +(students.reduce((a,b)=>a+b.avg,0)/students.length).toFixed(2);
 
+  // show the top student in the banner at the top
   $("#topBanner").html(`
     <div style="font-size:24px">🏆</div>
     <div>
@@ -319,13 +360,15 @@ function renderStudents() {
     </div>
   `);
 
+  // stat cards — quick summary numbers
   $("#stuStats").html(`
     <div class="stat-card"><div class="val">${students.length}</div><div class="lbl">Students</div></div>
     <div class="stat-card"><div class="val">${classAvg}</div><div class="lbl">Class Average</div></div>
     <div class="stat-card"><div class="val">${top.avg}</div><div class="lbl">Top Score</div></div>
     <div class="stat-card"><div class="val">${data.courses.length}</div><div class="lbl">Courses</div></div>
   `);
-// Tables
+
+  // build each row of the students table using template literals
   let rows = "";
   students.forEach(s=>{
     rows+=`<tr>
@@ -338,14 +381,18 @@ function renderStudents() {
       <td>${gr(s.avg)}</td>
     </tr>`;
   });
-  $("#stuBody").html(rows);
+  $("#stuBody").html(rows); // inject all rows into the table body at once
 }
-// Render Orders Function
+
+// PART: ORDER PROCESSING
+// computes total per order and the grand total of everything
+
 function renderOrders() {
   let grand = 0, rows = "";
+
   data.orders.forEach(o=>{
-    const tot = o.price * o.quantity;
-    grand += tot;
+    const tot = o.price * o.quantity; // total = price x qty (basic math)
+    grand += tot; // keep adding to the grand total
     rows+=`<tr>
       <td class="mono" style="color:#999">${o.orderId}</td>
       <td>${o.customer}</td>
@@ -356,26 +403,38 @@ function renderOrders() {
       <td class="mono">${money(tot)}</td>
     </tr>`;
   });
+
+  // grand total row at the bottom of the table
   rows+=`<tr class="grand-row">
     <td colspan="6" style="text-align:right;color:#999;font-weight:400">Grand Total</td>
     <td>${money(grand)}</td>
   </tr>`;
   $("#ordBody").html(rows);
 
+  // find the single most expensive order using reduce
   const biggest = data.orders.reduce((a,b)=>(a.price*a.quantity)>(b.price*b.quantity)?a:b);
+
   $("#ordStats").html(`
     <div class="stat-card"><div class="val">${data.orders.length}</div><div class="lbl">Total Orders</div></div>
     <div class="stat-card"><div class="val" style="font-size:20px">${money(grand)}</div><div class="lbl">Grand Total</div></div>
     <div class="stat-card"><div class="val" style="font-size:18px">${money(biggest.price*biggest.quantity)}</div><div class="lbl">Largest Order</div></div>
   `);
 }
-//Function for Searching specific
+
+// PART: SEARCH FEATURE
+// filters students by name as you type (case-insensitive)
+
 function doSearch(q) {
-  if(!q.trim()){ $("#searchOut").html(""); return; }
+  if(!q.trim()){ $("#searchOut").html(""); return; } // don't search if input is empty
+
+  // .filter() returns only students whose name contains the query
   const matches = enriched().filter(s=>s.name.toLowerCase().includes(q.toLowerCase()));
+
   if(!matches.length){ $("#searchOut").html('<p style="color:#999;font-size:13px">No results found.</p>'); return; }
+
   let html="";
   matches.forEach(s=>{
+    // show a card for each matched student with their individual subject grades
     html+=`<div class="tbl-wrap mb-3 p-3">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
         <strong style="font-size:16px">${s.name}</strong>
@@ -394,26 +453,45 @@ function doSearch(q) {
   $("#searchOut").html(html);
 }
 
+// debounce - waits 250ms after the user stops typing before searching
+// so it doesn't search on every single keystroke (better performance)
 let timer;
 $("#searchInput").on("input",function(){ clearTimeout(timer); timer=setTimeout(()=>doSearch($(this).val()),250); });
-//Render Function Validation
+
+
+// PART: JSON VALIDATION (not sure if this is part of the html, but to ensure valid inputs I added it)
+// checks if the data is clean and follows the rules (like it is also a guide)
+
 function renderValidation() {
   const checks = [
+    // rule 1: all grades must be actual numbers between 0 and 100
     { label:"All grades are numbers between 0–100",
       ok: data.students.every(s=>Object.values(s.subjects).every(g=>typeof g==="number"&&g>=0&&g<=100)) },
+
+    // rule 2: price and quantity in orders must be valid positive numbers
     { label:"Price and quantity are valid numbers",
       ok: data.orders.every(o=>typeof o.price==="number"&&o.price>=0&&typeof o.quantity==="number"&&o.quantity>=0) },
+
+    // rule 3: every student must have the 4 required fields
     { label:"Students have all required fields (id, name, course, subjects)",
       ok: data.students.every(s=>s.id&&s.name&&s.course&&s.subjects) },
+
+    // rule 4: every order must have the 5 required fields
     { label:"Orders have all required fields (orderId, customer, product, price, quantity)",
       ok: data.orders.every(o=>o.orderId&&o.customer&&o.product&&o.price&&o.quantity) },
+
+    // rule 5: the course code on each student must actually exist in the courses list
     { label:"All student course codes exist in the course table",
       ok: data.students.every(s=>data.courses.some(c=>c.code===s.course)) },
+
+    // rule 6: no two students should share the same ID
     { label:"Student IDs are unique",
       ok: new Set(data.students.map(s=>s.id)).size===data.students.length }
   ];
+
   const allOk = checks.every(c=>c.ok);
-  $("#hdrStatus").text(allOk?"All checks passed":"Issues found");
+  $("#hdrStatus").text(allOk?"All checks passed":"Issues found"); // updates the header status
+
   let html="";
   checks.forEach(c=>{
     html+=`<div class="check-item">
@@ -424,12 +502,16 @@ function renderValidation() {
   });
   $("#valList").html(html);
 }
-//Render for Outputting
+
+// PART: JSON OUTPUT TRANSFORMATION
+// builds a clean summary object and displays it as formatted JSON
 function renderOutput() {
   const students = enriched();
-  const grand = data.orders.reduce((a,o)=>a+o.price*o.quantity,0);
+  const grand = data.orders.reduce((a,o)=>a+o.price*o.quantity,0); // sum of all order totals
   const classAvg = +(students.reduce((a,b)=>a+b.avg,0)/students.length).toFixed(2);
   const top = students.reduce((a,b)=>a.avg>b.avg?a:b);
+
+  // this is the "transformed" summary JSON is generating
   const summary = {
     studentAverages: students.map(s=>({id:s.id,name:s.name,course:s.course,averageGrade:s.avg})),
     topStudent: {name:top.name,course:top.course,averageGrade:top.avg},
@@ -442,26 +524,31 @@ function renderOutput() {
         category:  o.category,
         price:     o.price,
         quantity:  o.quantity,
-        total:     o.price * o.quantity
+        total:     o.price * o.quantity // computed field - not in original data
       }))
     }
   };
-  // Format: inner objects on one line (this is so dizzying)
+
+  // custom formatter so each student/order object appears on ONE line
+  // instead of being spread across 6+ lines like normal JSON.stringify does (more organized)
+// I think this might be the most nakakahilo
   function fmtJson(obj) {
     const lines = [];
     lines.push("{");
     const keys = Object.keys(obj);
     keys.forEach((k, ki) => {
       const v = obj[k];
-      const comma = ki < keys.length - 1 ? "," : "";
+      const comma = ki < keys.length - 1 ? "," : ""; // add comma if not the last key
       if (Array.isArray(v)) {
+        // it's an array - open bracket, put each item on one line, close bracket
         lines.push(`  "${k}": [`);
         v.forEach((item, ii) => {
-          const row = JSON.stringify(item);
+          const row = JSON.stringify(item); // each item becomes a single-line JSON string
           lines.push("    " + row + (ii < v.length - 1 ? "," : ""));
         });
         lines.push("  ]" + comma);
       } else if (typeof v === "object" && v !== null) {
+        // it's a nested object (like orderSummary) - expand its keys but keep arrays compact
         lines.push(`  "${k}": {`);
         const sk = Object.keys(v);
         sk.forEach((sk2, si) => {
@@ -479,12 +566,14 @@ function renderOutput() {
         });
         lines.push("  }" + comma);
       } else {
+        // it's just a plain value (string/number)
         lines.push(`  "${k}": ${JSON.stringify(v)}` + comma);
       }
     });
     lines.push("}");
-    return lines.join("\n");
+    return lines.join("\n"); // join all lines into one big string
   }
+
   $("#jsonOut").text(fmtJson(summary));
   $("#outStats").html(`
     <div class="stat-card"><div class="val">${classAvg}</div><div class="lbl">Class Average</div></div>
@@ -492,14 +581,18 @@ function renderOutput() {
   `);
 }
 
+// copies the JSON text to clipboard when the Copy button is clicked
 $("#copyBtn").on("click",function(){
   navigator.clipboard.writeText($("#jsonOut").text());
   $(this).text("Copied!"); setTimeout(()=>$(this).text("Copy"),2000);
 });
-//Render Function for Bonus +10 :)
+
+
+// BONUS: sort students by average, add new students/orders (dynamic data add), export
 function renderBonus() {
+  // .sort() with (b - a) gives us descending order (highest avg first)
   const sorted = enriched().sort((a,b)=>b.avg-a.avg);
-  const medals = ["🥇","🥈","🥉"];
+  const medals = ["🥇","🥈","🥉"]; // top 3 get medals, rest just get their rank number
   let rows="";
   sorted.forEach((s,i)=>{
     rows+=`<tr>
@@ -512,37 +605,70 @@ function renderBonus() {
   $("#sortedBody").html(rows);
 }
 
+// ADD STUDENT - grabs values from the form, validates, then pushes to data.students
 $("#addBtn").on("click",function(){
   const id=parseInt($("#nId").val()), name=$("#nName").val().trim(), course=$("#nCourse").val();
   const math=parseInt($("#nMath").val()), sci=parseInt($("#nSci").val()), prog=parseInt($("#nProg").val());
+
+  // make sure nothing is empty or NaN before adding
   if(!id||!name||isNaN(math)||isNaN(sci)||isNaN(prog)){
     $("#addMsg").css("color","#8a2a2a").text("Please fill all fields."); return;
   }
+  // grades have to be within the valid range
   if([math,sci,prog].some(g=>g<0||g>100)){
     $("#addMsg").css("color","#8a2a2a").text("Grades must be 0–100."); return;
   }
+
+  // .push() adds the new student object to the end of the array
   data.students.push({id,name,course,subjects:{Math:math,Science:sci,Programming:prog}});
-  renderAll();
+  renderAll(); // re-render everything so the new student shows up everywhere
   $("#addMsg").css("color","#2a7a47").text(`${name} added.`);
-  setTimeout(()=>$("#addMsg").text(""),3000);
-  $("#nId,#nName,#nMath,#nSci,#nProg").val("");
+  setTimeout(()=>$("#addMsg").text(""),3000); // clears the message after 3 seconds
+  $("#nId,#nName,#nMath,#nSci,#nProg").val(""); // reset the form fields
 });
 
+// ADD ORDER - same idea as add student but for the orders array
+$("#addOrderBtn").on("click",function(){
+  const id=parseInt($("#oId").val()), cust=$("#oCust").val().trim();
+  const prod=$("#oProd").val().trim(), cat=$("#oCat").val();
+  const price=parseFloat($("#oPrice").val()), qty=parseInt($("#oQty").val());
+
+  // validate - price and qty must be positive numbers, everything else must exist
+  if(!id||!cust||!prod||isNaN(price)||isNaN(qty)||price<=0||qty<=0){
+    $("#addOrderMsg").css("color","#8a2a2a").text("Please fill all fields correctly."); return;
+  }
+
+  // push the new order into the orders array
+  data.orders.push({orderId:id, customer:cust, product:prod, category:cat, price:price, quantity:qty});
+  renderAll();
+  $("#addOrderMsg").css("color","#2a7a47").text(`Order #${id} added.`);
+  setTimeout(()=>$("#addOrderMsg").text(""),3000);
+  $("#oId,#oCust,#oProd,#oPrice,#oQty").val("");
+});
+
+// EXPORT — converts the full data object to a JSON string and downloads it as a file
 $("#exportBtn").on("click",function(){
-  const students = enriched();
+  const students = enriched(); // include computed avg and courseName in the export
   const full = {courses:data.courses, students, orders:data.orders.map(o=>({...o,total:o.price*o.quantity}))};
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(full,null,2)],{type:"application/json"}));
-  a.download="data.json"; a.click();
+  a.download="data.json"; a.click(); // triggers the file download
 });
-//Render All
+
+// renderAll — calls every render function at once
+// used on page load and whenever data changes (add student/order)
+
 function renderAll(){
-  renderStudents(); renderOrders(); renderValidation(); renderOutput(); renderBonus();
+  renderStudents();
+  renderOrders();
+  renderValidation();
+  renderOutput();
+  renderBonus();
 }
 
+// runs renderAll as soon as the page/DOM is fully loaded
 $(()=>renderAll());
 
-//Render = transforming code into visual
 </script>
 </body>
 </html>
