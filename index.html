@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student & Order System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Lora:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      background: #f5f3ee;
+      font-family: 'Lora', Georgia, serif;
+      color: #1a1a1a;
+      font-size: 15px;
+    }
+    a { text-decoration: none; }
+
+    .topbar {
+      background: #1a1a1a;
+      color: #f5f3ee;
+      padding: 14px 28px;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+    .topbar h1 { font-size: 17px; font-weight: 600; margin: 0; }
+    .topbar small { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; }
+
+    .tab-nav {
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 0 28px;
+      display: flex;
+    }
+    .tab-nav a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      color: #888;
+      padding: 12px 18px;
+      border-bottom: 2px solid transparent;
+      display: inline-block;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-nav a:hover { color: #1a1a1a; }
+    .tab-nav a.active { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+
+    .page { display: none; padding: 32px 28px; max-width: 960px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    .sec-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #999;
+      margin-bottom: 12px;
+    }
+
+    .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e0ddd7;
+      border-radius: 6px;
+      padding: 16px 22px;
+      min-width: 130px;
+    }
+    .stat-card .val { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; line-height: 1.1; }
+    .stat-card .lbl { font-size: 12px; color: #999; margin-top: 3px; }
+
+    .top-student {
+      background: #1a1a1a;
+      color: #f5f3ee;
+      border-radius: 6px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .top-student .name { font-size: 18px; font-weight: 600; }
+    .top-student .sub  { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #aaa; margin-top: 3px; }
+
+    .tbl-wrap { background: #fff; border: 1px solid #e0ddd7; border-radius: 6px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: #999;
+      background: #faf9f6;
+      border-bottom: 1px solid #e0ddd7;
+      padding: 10px 14px;
+      font-weight: 400;
+    }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #faf9f6; }
+
+    .gr { font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 3px; display: inline-block; }
+    .gr-hi  { background: #e6f4ec; color: #2a7a47; }
+    .gr-mid { background: #e8eef9; color: #2a4a8a; }
+    .gr-lo  { background: #fde8e8; color: #8a2a2a; }
+
+    .search-box {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: 'Lora', serif;
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+      margin-bottom: 20px;
+    }
+    .search-box:focus { border-color: #1a1a1a; }
+
+    .check-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f0ede8; font-size: 14px; }
+    .check-item:last-child { border-bottom: none; }
+    .ck { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; }
+    .ck-ok   { color: #2a7a47; }
+    .ck-fail { color: #8a2a2a; }
+
+    pre.json-out {
+      background: #1a1a1a;
+      color: #c8d0e0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      padding: 20px;
+      border-radius: 6px;
+      overflow: auto;
+      max-height: 400px;
+      white-space: pre;
+    }
+
+    .btn-plain {
+      background: #1a1a1a; color: #f5f3ee;
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+      padding: 8px 18px; border: none; border-radius: 4px; cursor: pointer;
+    }
+    .btn-plain:hover { background: #333; }
+    .btn-outline {
+      background: transparent; border: 1px solid #ccc; color: #555;
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+      padding: 7px 14px; border-radius: 4px; cursor: pointer;
+    }
+    .btn-outline:hover { border-color: #1a1a1a; color: #1a1a1a; }
+
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .form-row .field { display: flex; flex-direction: column; gap: 4px; }
+    .form-row label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: #999; }
+    .form-row input, .form-row select {
+      background: #fff; border: 1px solid #ddd; border-radius: 4px;
+      padding: 7px 10px; font-family: 'Lora', serif; font-size: 13px; outline: none; color: #1a1a1a;
+    }
+    .form-row input:focus, .form-row select:focus { border-color: #1a1a1a; }
+
+    .msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-left: 12px; }
+    .grand-row td { font-family: 'IBM Plex Mono', monospace; font-weight: 600; background: #faf9f6; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Student &amp; Order System</h1>
+  <small id="hdrStatus">Loading…</small>
+</div>
+
+<div class="tab-nav" id="tabNav">
+  <a href="#" class="active" data-tab="students">Students</a>
+  <a href="#" data-tab="orders">Orders</a>
+  <a href="#" data-tab="search">Search</a>
+  <a href="#" data-tab="validation">Validation</a>
+  <a href="#" data-tab="output">JSON Output</a>
+  <a href="#" data-tab="bonus">Bonus</a>
+</div>
+
+<!-- STUDENTS -->
+<div class="page active" id="students">
+  <div id="topBanner" class="top-student"></div>
+  <div class="stat-row" id="stuStats"></div>
+  <div class="sec-label">All Students</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Course</th><th>Math</th><th>Science</th><th>Programming</th><th>Avg</th></tr></thead>
+      <tbody id="stuBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ORDERS -->
+<div class="page" id="orders">
+  <div class="stat-row" id="ordStats"></div>
+  <div class="sec-label">Orders</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Category</th><th>Price</th><th>Qty</th><th>Total</th></tr></thead>
+      <tbody id="ordBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="page" id="search">
+  <div class="sec-label">Search by name</div>
+  <input class="search-box" id="searchInput" placeholder="e.g. Alice"/>
+  <div id="searchOut"></div>
+</div>
+
+<!-- VALIDATION -->
+<div class="page" id="validation">
+  <div class="sec-label">JSON Validation</div>
+  <div class="tbl-wrap" style="padding: 4px 16px;">
+    <div id="valList"></div>
+  </div>
+</div>
+
+<!-- JSON OUTPUT -->
+<div class="page" id="output">
+  <div class="stat-row" id="outStats"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="sec-label" style="margin:0">Generated Summary JSON</div>
+    <button class="btn-outline" id="copyBtn">Copy</button>
+  </div>
+  <pre class="json-out" id="jsonOut"></pre>
+</div>
+
+<!-- BONUS -->
+<div class="page" id="bonus">
+  <div class="sec-label">Sorted by Average Grade</div>
+  <div class="tbl-wrap mb-4">
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Course</th><th>Average</th></tr></thead>
+      <tbody id="sortedBody"></tbody>
+    </table>
+  </div>
+
+  <div class="sec-label">Add New Student</div>
+  <div class="tbl-wrap p-3 mb-4">
+    <div class="form-row">
+      <div class="field"><label>ID</label><input id="nId" type="number" style="width:70px" placeholder="6"/></div>
+      <div class="field"><label>Name</label><input id="nName" style="width:120px" placeholder="Frank"/></div>
+      <div class="field"><label>Course</label>
+        <select id="nCourse"><option>BSIT</option><option>BSCS</option><option>BSIS</option></select>
+      </div>
+      <div class="field"><label>Math</label><input id="nMath" type="number" style="width:70px" placeholder="80"/></div>
+      <div class="field"><label>Science</label><input id="nSci" type="number" style="width:70px" placeholder="80"/></div>
+      <div class="field"><label>Programming</label><input id="nProg" type="number" style="width:70px" placeholder="80"/></div>
+    </div>
+    <button class="btn-plain" id="addBtn">Add Student</button>
+    <span class="msg" id="addMsg"></span>
+  </div>
+
+  <div class="sec-label">Export</div>
+  <div class="tbl-wrap p-3">
+    <p style="font-size:13px;color:#666;margin-bottom:12px;">Download the full structured JSON data file.</p>
+    <button class="btn-plain" id="exportBtn">Download JSON</button>
+  </div>
+</div>
+
+<!-- SCRIPT -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+
+//DATA
+const data = {
+  courses: [
+    { code:"BSIT", name:"Bachelor of Science in IT" },
+    { code:"BSCS", name:"Bachelor of Science in CS" },
+    { code:"BSIS", name:"Bachelor of Science in IS" }
+  ],
+  students: [
+    { id:1, name:"Alice",   course:"BSIT", subjects:{Math:90, Science:85, Programming:92} },
+    { id:2, name:"Bob",     course:"BSIT", subjects:{Math:78, Science:88, Programming:80} },
+    { id:3, name:"Charlie", course:"BSCS", subjects:{Math:95, Science:91, Programming:94} },
+    { id:4, name:"Diana",   course:"BSCS", subjects:{Math:85, Science:87, Programming:89} },
+    { id:5, name:"Ethan",   course:"BSIS", subjects:{Math:70, Science:75, Programming:72} }
+  ],
+  orders: [
+    { orderId:1, customer:"Alice",   product:"Mouse",     category:"Accessories", price:500,   quantity:2 },
+    { orderId:2, customer:"Bob",     product:"Keyboard",  category:"Accessories", price:1500,  quantity:1 },
+    { orderId:3, customer:"Charlie", product:"Monitor",   category:"Hardware",    price:7000,  quantity:2 },
+    { orderId:4, customer:"Diana",   product:"Laptop",    category:"Hardware",    price:45000, quantity:1 },
+    { orderId:5, customer:"Ethan",   product:"USB Cable", category:"Accessories", price:200,   quantity:3 },
+    { orderId:6, customer:"Alice",   product:"Headset",   category:"Accessories", price:1200,  quantity:1 }
+  ]
+};
+
+const avg = obj => +(Object.values(obj).reduce((a,b)=>a+b,0)/Object.values(obj).length).toFixed(2);
+const money = n => "₱"+Number(n).toLocaleString();
+const courseName = code => (data.courses.find(c=>c.code===code)||{name:code}).name;
+const grCls = g => g>=90?"gr-hi":g>=80?"gr-mid":"gr-lo";
+const gr = g => `<span class="gr ${grCls(g)}">${g}</span>`;
+const enriched = () => data.students.map(s=>({...s, avg:avg(s.subjects), courseName:courseName(s.course)}));
+
+// Tab switching
+$("#tabNav a").on("click", function(e){
+  e.preventDefault();
+  $("#tabNav a").removeClass("active");
+  $(this).addClass("active");
+  $(".page").removeClass("active");
+  $("#"+$(this).data("tab")).addClass("active");
+});
+
+//Student Render Function
+function renderStudents() {
+  const students = enriched();
+  const top = students.reduce((a,b)=>a.avg>b.avg?a:b);
+  const classAvg = +(students.reduce((a,b)=>a+b.avg,0)/students.length).toFixed(2);
+
+  $("#topBanner").html(`
+    <div style="font-size:24px">🏆</div>
+    <div>
+      <div class="name">${top.name} — Top Student</div>
+      <div class="sub">${top.course} · ${top.courseName} · Average ${top.avg}</div>
+    </div>
+  `);
+
+  $("#stuStats").html(`
+    <div class="stat-card"><div class="val">${students.length}</div><div class="lbl">Students</div></div>
+    <div class="stat-card"><div class="val">${classAvg}</div><div class="lbl">Class Average</div></div>
+    <div class="stat-card"><div class="val">${top.avg}</div><div class="lbl">Top Score</div></div>
+    <div class="stat-card"><div class="val">${data.courses.length}</div><div class="lbl">Courses</div></div>
+  `);
+// Tables
+  let rows = "";
+  students.forEach(s=>{
+    rows+=`<tr>
+      <td class="mono" style="color:#999">${s.id}</td>
+      <td>${s.name}</td>
+      <td class="mono" style="font-size:12px">${s.course}</td>
+      <td>${gr(s.subjects.Math)}</td>
+      <td>${gr(s.subjects.Science)}</td>
+      <td>${gr(s.subjects.Programming)}</td>
+      <td>${gr(s.avg)}</td>
+    </tr>`;
+  });
+  $("#stuBody").html(rows);
+}
+// Render Orders Function
+function renderOrders() {
+  let grand = 0, rows = "";
+  data.orders.forEach(o=>{
+    const tot = o.price * o.quantity;
+    grand += tot;
+    rows+=`<tr>
+      <td class="mono" style="color:#999">${o.orderId}</td>
+      <td>${o.customer}</td>
+      <td>${o.product}</td>
+      <td style="font-size:13px;color:#777">${o.category}</td>
+      <td class="mono">${money(o.price)}</td>
+      <td class="mono">${o.quantity}</td>
+      <td class="mono">${money(tot)}</td>
+    </tr>`;
+  });
+  rows+=`<tr class="grand-row">
+    <td colspan="6" style="text-align:right;color:#999;font-weight:400">Grand Total</td>
+    <td>${money(grand)}</td>
+  </tr>`;
+  $("#ordBody").html(rows);
+
+  const biggest = data.orders.reduce((a,b)=>(a.price*a.quantity)>(b.price*b.quantity)?a:b);
+  $("#ordStats").html(`
+    <div class="stat-card"><div class="val">${data.orders.length}</div><div class="lbl">Total Orders</div></div>
+    <div class="stat-card"><div class="val" style="font-size:20px">${money(grand)}</div><div class="lbl">Grand Total</div></div>
+    <div class="stat-card"><div class="val" style="font-size:18px">${money(biggest.price*biggest.quantity)}</div><div class="lbl">Largest Order</div></div>
+  `);
+}
+//Function for Searching specific
+function doSearch(q) {
+  if(!q.trim()){ $("#searchOut").html(""); return; }
+  const matches = enriched().filter(s=>s.name.toLowerCase().includes(q.toLowerCase()));
+  if(!matches.length){ $("#searchOut").html('<p style="color:#999;font-size:13px">No results found.</p>'); return; }
+  let html="";
+  matches.forEach(s=>{
+    html+=`<div class="tbl-wrap mb-3 p-3">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+        <strong style="font-size:16px">${s.name}</strong>
+        <span class="mono" style="font-size:12px;color:#999">${s.course} · ${s.courseName}</span>
+        <span style="margin-left:auto">${gr(s.avg)}</span>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        ${Object.entries(s.subjects).map(([sub,g])=>`
+          <div class="stat-card" style="min-width:100px">
+            <div class="val" style="font-size:22px">${g}</div>
+            <div class="lbl">${sub}</div>
+          </div>`).join("")}
+      </div>
+    </div>`;
+  });
+  $("#searchOut").html(html);
+}
+
+let timer;
+$("#searchInput").on("input",function(){ clearTimeout(timer); timer=setTimeout(()=>doSearch($(this).val()),250); });
+//Render Function Validation
+function renderValidation() {
+  const checks = [
+    { label:"All grades are numbers between 0–100",
+      ok: data.students.every(s=>Object.values(s.subjects).every(g=>typeof g==="number"&&g>=0&&g<=100)) },
+    { label:"Price and quantity are valid numbers",
+      ok: data.orders.every(o=>typeof o.price==="number"&&o.price>=0&&typeof o.quantity==="number"&&o.quantity>=0) },
+    { label:"Students have all required fields (id, name, course, subjects)",
+      ok: data.students.every(s=>s.id&&s.name&&s.course&&s.subjects) },
+    { label:"Orders have all required fields (orderId, customer, product, price, quantity)",
+      ok: data.orders.every(o=>o.orderId&&o.customer&&o.product&&o.price&&o.quantity) },
+    { label:"All student course codes exist in the course table",
+      ok: data.students.every(s=>data.courses.some(c=>c.code===s.course)) },
+    { label:"Student IDs are unique",
+      ok: new Set(data.students.map(s=>s.id)).size===data.students.length }
+  ];
+  const allOk = checks.every(c=>c.ok);
+  $("#hdrStatus").text(allOk?"All checks passed":"Issues found");
+  let html="";
+  checks.forEach(c=>{
+    html+=`<div class="check-item">
+      <span class="ck ${c.ok?"ck-ok":"ck-fail"}">${c.ok?"✓":"✗"}</span>
+      <span>${c.label}</span>
+      <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:${c.ok?"#2a7a47":"#8a2a2a"}">${c.ok?"PASS":"FAIL"}</span>
+    </div>`;
+  });
+  $("#valList").html(html);
+}
+//Render for Outputting
+function renderOutput() {
+  const students = enriched();
+  const grand = data.orders.reduce((a,o)=>a+o.price*o.quantity,0);
+  const classAvg = +(students.reduce((a,b)=>a+b.avg,0)/students.length).toFixed(2);
+  const top = students.reduce((a,b)=>a.avg>b.avg?a:b);
+  const summary = {
+    studentAverages: students.map(s=>({id:s.id,name:s.name,course:s.course,averageGrade:s.avg})),
+    topStudent: {name:top.name,course:top.course,averageGrade:top.avg},
+    orderSummary: {
+      grandTotal: grand,
+      orders: data.orders.map(o=>({
+        orderId:   o.orderId,
+        customer:  o.customer,
+        product:   o.product,
+        category:  o.category,
+        price:     o.price,
+        quantity:  o.quantity,
+        total:     o.price * o.quantity
+      }))
+    }
+  };
+  // Format: inner objects on one line (this is so dizzying)
+  function fmtJson(obj) {
+    const lines = [];
+    lines.push("{");
+    const keys = Object.keys(obj);
+    keys.forEach((k, ki) => {
+      const v = obj[k];
+      const comma = ki < keys.length - 1 ? "," : "";
+      if (Array.isArray(v)) {
+        lines.push(`  "${k}": [`);
+        v.forEach((item, ii) => {
+          const row = JSON.stringify(item);
+          lines.push("    " + row + (ii < v.length - 1 ? "," : ""));
+        });
+        lines.push("  ]" + comma);
+      } else if (typeof v === "object" && v !== null) {
+        lines.push(`  "${k}": {`);
+        const sk = Object.keys(v);
+        sk.forEach((sk2, si) => {
+          const sv = v[sk2];
+          const sc = si < sk.length - 1 ? "," : "";
+          if (Array.isArray(sv)) {
+            lines.push(`    "${sk2}": [`);
+            sv.forEach((item, ii) => {
+              lines.push("      " + JSON.stringify(item) + (ii < sv.length - 1 ? "," : ""));
+            });
+            lines.push("    ]" + sc);
+          } else {
+            lines.push(`    "${sk2}": ${JSON.stringify(sv)}` + sc);
+          }
+        });
+        lines.push("  }" + comma);
+      } else {
+        lines.push(`  "${k}": ${JSON.stringify(v)}` + comma);
+      }
+    });
+    lines.push("}");
+    return lines.join("\n");
+  }
+  $("#jsonOut").text(fmtJson(summary));
+  $("#outStats").html(`
+    <div class="stat-card"><div class="val">${classAvg}</div><div class="lbl">Class Average</div></div>
+    <div class="stat-card"><div class="val" style="font-size:20px">${money(grand)}</div><div class="lbl">Grand Total</div></div>
+  `);
+}
+
+$("#copyBtn").on("click",function(){
+  navigator.clipboard.writeText($("#jsonOut").text());
+  $(this).text("Copied!"); setTimeout(()=>$(this).text("Copy"),2000);
+});
+//Render Function for Bonus +10 :)
+function renderBonus() {
+  const sorted = enriched().sort((a,b)=>b.avg-a.avg);
+  const medals = ["🥇","🥈","🥉"];
+  let rows="";
+  sorted.forEach((s,i)=>{
+    rows+=`<tr>
+      <td class="mono" style="color:#999">${medals[i]||i+1}</td>
+      <td>${s.name}</td>
+      <td class="mono" style="font-size:12px">${s.course}</td>
+      <td>${gr(s.avg)}</td>
+    </tr>`;
+  });
+  $("#sortedBody").html(rows);
+}
+
+$("#addBtn").on("click",function(){
+  const id=parseInt($("#nId").val()), name=$("#nName").val().trim(), course=$("#nCourse").val();
+  const math=parseInt($("#nMath").val()), sci=parseInt($("#nSci").val()), prog=parseInt($("#nProg").val());
+  if(!id||!name||isNaN(math)||isNaN(sci)||isNaN(prog)){
+    $("#addMsg").css("color","#8a2a2a").text("Please fill all fields."); return;
+  }
+  if([math,sci,prog].some(g=>g<0||g>100)){
+    $("#addMsg").css("color","#8a2a2a").text("Grades must be 0–100."); return;
+  }
+  data.students.push({id,name,course,subjects:{Math:math,Science:sci,Programming:prog}});
+  renderAll();
+  $("#addMsg").css("color","#2a7a47").text(`${name} added.`);
+  setTimeout(()=>$("#addMsg").text(""),3000);
+  $("#nId,#nName,#nMath,#nSci,#nProg").val("");
+});
+
+$("#exportBtn").on("click",function(){
+  const students = enriched();
+  const full = {courses:data.courses, students, orders:data.orders.map(o=>({...o,total:o.price*o.quantity}))};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(full,null,2)],{type:"application/json"}));
+  a.download="data.json"; a.click();
+});
+//Render All
+function renderAll(){
+  renderStudents(); renderOrders(); renderValidation(); renderOutput(); renderBonus();
+}
+
+$(()=>renderAll());
+
+//Render = transforming code into visual
+</script>
+</body>
+</html>
