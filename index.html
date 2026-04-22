@@ -202,8 +202,6 @@
   </div>
 </div>
 
-<!-- COURSES -->
-<!--
 <!-- SEARCH -->
 <div class="page" id="search">
   <div class="sec-label">Search by name</div>
@@ -282,10 +280,9 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
 
-// ============================================================
-// our MAIN data — this is basically the "database" but in JS
-// since we can't fetch a real .json file without a server lol
-// ============================================================
+// our MAIN data - this is basically the "database" but in JS
+// since we can't fetch a real .json file without a server lol or a separate file ;)
+
 const data = {
   courses: [
     { code:"BSIT", name:"Bachelor of Science in IT" },
@@ -309,7 +306,7 @@ const data = {
   ]
 };
 
-// HELPER FUNCTIONS — reusable
+// HELPER FUNCTIONS - reusable
 
 // for avg
 const avg = obj => +(Object.values(obj).reduce((a,b)=>a+b,0)/Object.values(obj).length).toFixed(2);
